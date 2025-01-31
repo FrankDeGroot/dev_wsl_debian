@@ -27,6 +27,15 @@ EOF
   fi
 }
 
+ensure_latest_glab() {
+  if ! [ -x "$(command -v glab)" ]; then
+    wget -qO - 'https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub' | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
+    echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
+    sudo apt update
+    sudo apt install glab
+  fi
+}
+
 ensure_latest_node() {
   if ! [ -x "$(command -v node)" ]; then
     echo "Installing node"
@@ -146,12 +155,14 @@ ensure_latest_k9s() {
 create_sudoers
 create_update
 
+ensure_latest_node
+ensure_latest_glab
+
 sudo apt-get update
 sudo apt-get upgrade -y
 sudo apt-get install -y gh gpg jq unattended-upgrades
 sudo dpkg-reconfigure -u unattended-upgrades
 
-ensure_latest_node
 ensure_latest_docker
 ensure_latest_helm
 ensure_latest_kind
