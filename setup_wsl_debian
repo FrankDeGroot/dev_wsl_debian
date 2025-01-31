@@ -1,0 +1,159 @@
+#!/bin/bash
+set -euo pipefail
+
+create_sudoers() {
+  if [ ! -f "/etc/sudoers.d/$USER" ]; then
+    echo "Setting no-password sudo for $USER"
+    echo -e "$USER ALL=(ALL) NOPASSWD: ALL\n" | sudo tee /etc/sudoers.d/$USER >/dev/null
+  else
+    echo "Already no-password sudo for $USER"
+  fi
+}
+
+create_update() {
+  if [ ! -f "/etc/apt/apt.conf.d/00unattended-upgrade-all" ]; then
+    echo "Setting full unattended upgrades"
+    cat << EOF | sudo tee /etc/apt/apt.conf.d/00unattended-upgrade-all >/dev/null
+APT::Periodic::AutocleanInterval "1";
+APT::Periodic::Enable "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::Update-Package-Lists "1";
+Unattended-Upgrade::Origins-Pattern {
+  "origin=*";
+};
+EOF
+  else
+    echo "Already full unattended upgrades"
+  fi
+}
+
+ensure_latest_node() {
+  if ! [ -x "$(command -v node)" ]; then
+    echo "Installing node"
+    curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
+    sudo apt install -y nodejs
+  fi
+}
+
+ensure_latest_docker() {
+  if ! [ -x "$(command -v docker)" ]; then
+    echo "Installing Docker"
+    # Get specific apt-based distro
+    . /etc/os-release
+    # Add Docker's official GPG key
+    sudo apt-get install -y ca-certificates curl
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/$ID/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    # Add the repository to apt sources
+    echo \
+      "deb [arch=$(dpkg --print-architecture) \
+      signed-by=/etc/apt/keyrings/docker.asc] \
+      https://download.docker.com/linux/$ID \
+      $VERSION_CODENAME stable" |
+      sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+    sudo apt-get update
+
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    sudo usermod -aG docker $USER
+  else
+    echo "Docker already installed"
+  fi
+}
+
+ensure_latest_helm() {
+  curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+  sudo apt-get update
+  sudo apt-get install helm
+}
+
+install_latest_kind() {
+  curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v{$KIND_LATEST_VERSION}/kind-linux-amd64
+  chmod +x ./kind
+  sudo mv ./kind /usr/local/bin/kind
+}
+
+ensure_latest_kind() {
+  KIND_LATEST_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/tags | jq -r '[.[] | select(.name | test("-alpha$") | not)][0].name | sub("^."; "")')
+  if ! [ -x "$(command -v kind)" ]; then
+    echo "Installing kind"
+    install_latest_kind
+  else
+    KIND_INSTALLED_VERSION=$(kind --version | awk '{print $3}')
+    if [ "$KIND_LATEST_VERSION" != "$KIND_INSTALLED_VERSION" ]; then
+      echo "Updating kind from $KIND_INSTALLED_VERSION to $KIND_LATEST_VERSION"
+      install_latest_kind
+    else
+      echo "Latest version of kind already installed"
+    fi
+  fi
+}
+
+install_latest_kubectl() {
+  curl -LO "https://dl.k8s.io/release/$KUBECTL_LATEST_VERSION/bin/linux/amd64/kubectl"
+  chmod +x ./kubectl
+  sudo mv ./kubectl /usr/local/bin/kubectl
+}
+
+ensure_latest_kubectl() {
+  KUBECTL_LATEST_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+  if ! [ -x "$(command -v kubectl)" ]; then
+    echo "Downloading kubectl"
+    install_latest_kubectl
+  else
+    KUBECTL_INSTALLED_VERSION=$(kubectl version --client=true | awk 'NR==1 {print $3}')
+    if [ "$KUBECTL_LATEST_VERSION" != "$KUBECTL_INSTALLED_VERSION" ]; then
+      echo "Updating kubectl from $KUBECTL_INSTALLED_VERSION to $KUBECTL_LATEST_VERSION"
+      install_latest_kubectl
+    else
+      echo "Latest version of kubectl already installed"
+    fi
+  fi
+}
+
+install_latest_k9s() {
+  curl -LO https://github.com/derailed/k9s/releases/download/$K9S_LATEST_VERSION/k9s_Linux_amd64.tar.gz
+  tar -xzvf k9s_Linux_amd64.tar.gz --wildcards 'k9s'
+  rm k9s_Linux_amd64.tar.gz
+  sudo mv ./k9s /usr/local/bin/k9s
+
+  # TODO get skins directory using something like below:
+  # git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
+  # cd k9s
+  # git sparse-checkout set --no-cone /skins
+  # git checkout
+  # mkdir -p ~/.config/k9s
+  # mv skins ~/.config/k9s/skins
+}
+
+ensure_latest_k9s() {
+  K9S_LATEST_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/tags | jq -r '.[0].name')
+  if ! [ -x "$(command -v k9s)" ]; then
+    echo "Downloading k9s"
+    install_latest_k9s
+  else
+    K9S_INSTALLED_VERSION=$(k9s version | awk '/ v/ {print $2}')
+    if [ "$K9S_LATEST_VERSION" != "$K9S_INSTALLED_VERSION" ]; then
+      echo "Updating k9s from $K9S_INSTALLED_VERSION to $K9S_LATEST_VERSION"
+      install_latest_k9s
+    else
+      echo "Latest version of k9s already installed"
+    fi
+  fi
+}
+
+create_sudoers
+create_update
+
+sudo apt-get update
+sudo apt-get upgrade -y
+sudo apt-get install -y gh gpg jq unattended-upgrades
+sudo dpkg-reconfigure -u unattended-upgrades
+
+ensure_latest_node
+ensure_latest_docker
+ensure_latest_helm
+ensure_latest_kind
+ensure_latest_kubectl
+ensure_latest_k9s
