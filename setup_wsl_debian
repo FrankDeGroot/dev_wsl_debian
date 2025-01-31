@@ -44,6 +44,22 @@ ensure_latest_node() {
   fi
 }
 
+ensure_latest_bun() {
+  if ! [ -x "$(command -v bun)" ]; then
+    curl -fsSL https://bun.sh/install | bash
+  else
+    bun upgrade
+  fi
+}
+
+ensure_latest_deno() {
+  if ! [ -x "$(command -v deno)" ]; then
+    curl -fsSL https://deno.land/install.sh | sh
+  else
+    deno upgrade
+  fi
+}
+
 ensure_latest_docker() {
   if ! [ -x "$(command -v docker)" ]; then
     echo "Installing Docker"
@@ -160,9 +176,11 @@ ensure_latest_glab
 
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y gh gpg jq unattended-upgrades
+sudo apt-get install -y gh gpg jq unattended-upgrades unzip
 sudo dpkg-reconfigure -u unattended-upgrades
 
+ensure_latest_bun
+ensure_latest_deno
 ensure_latest_docker
 ensure_latest_helm
 ensure_latest_kind
