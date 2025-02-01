@@ -27,23 +27,6 @@ EOF
   fi
 }
 
-ensure_latest_glab() {
-  if ! [ -x "$(command -v glab)" ]; then
-    curl -fsSL https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
-    echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
-    sudo apt update
-    sudo apt install glab
-  fi
-}
-
-ensure_latest_node() {
-  if ! [ -x "$(command -v node)" ]; then
-    echo "Installing node"
-    curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
-    sudo apt install -y nodejs
-  fi
-}
-
 ensure_latest_bun() {
   if ! [ -x "$(command -v bun)" ]; then
     curl -fsSL https://bun.sh/install | bash
@@ -86,11 +69,51 @@ ensure_latest_docker() {
   fi
 }
 
+ensure_latest_glab() {
+  if ! [ -x "$(command -v glab)" ]; then
+    curl -fsSL https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
+    echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
+    sudo apt update
+    sudo apt install glab
+  fi
+}
+
 ensure_latest_helm() {
   curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
   sudo apt-get update
   sudo apt-get install helm
+}
+
+install_latest_k9s() {
+  curl -LO https://github.com/derailed/k9s/releases/download/$K9S_LATEST_VERSION/k9s_Linux_amd64.tar.gz
+  tar -xzvf k9s_Linux_amd64.tar.gz --wildcards 'k9s'
+  rm k9s_Linux_amd64.tar.gz
+  sudo mv ./k9s /usr/local/bin/k9s
+
+  # TODO get skins directory using something like below:
+  # git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
+  # cd k9s
+  # git sparse-checkout set --no-cone /skins
+  # git checkout
+  # mkdir -p ~/.config/k9s
+  # mv skins ~/.config/k9s/skins
+}
+
+ensure_latest_k9s() {
+  K9S_LATEST_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/tags | jq -r '.[0].name')
+  if ! [ -x "$(command -v k9s)" ]; then
+    echo "Downloading k9s"
+    install_latest_k9s
+  else
+    K9S_INSTALLED_VERSION=$(k9s version | awk '/ v/ {print $2}')
+    if [ "$K9S_LATEST_VERSION" != "$K9S_INSTALLED_VERSION" ]; then
+      echo "Updating k9s from $K9S_INSTALLED_VERSION to $K9S_LATEST_VERSION"
+      install_latest_k9s
+    else
+      echo "Latest version of k9s already installed"
+    fi
+  fi
 }
 
 install_latest_kind() {
@@ -137,52 +160,28 @@ ensure_latest_kubectl() {
   fi
 }
 
-install_latest_k9s() {
-  curl -LO https://github.com/derailed/k9s/releases/download/$K9S_LATEST_VERSION/k9s_Linux_amd64.tar.gz
-  tar -xzvf k9s_Linux_amd64.tar.gz --wildcards 'k9s'
-  rm k9s_Linux_amd64.tar.gz
-  sudo mv ./k9s /usr/local/bin/k9s
-
-  # TODO get skins directory using something like below:
-  # git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
-  # cd k9s
-  # git sparse-checkout set --no-cone /skins
-  # git checkout
-  # mkdir -p ~/.config/k9s
-  # mv skins ~/.config/k9s/skins
-}
-
-ensure_latest_k9s() {
-  K9S_LATEST_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/tags | jq -r '.[0].name')
-  if ! [ -x "$(command -v k9s)" ]; then
-    echo "Downloading k9s"
-    install_latest_k9s
-  else
-    K9S_INSTALLED_VERSION=$(k9s version | awk '/ v/ {print $2}')
-    if [ "$K9S_LATEST_VERSION" != "$K9S_INSTALLED_VERSION" ]; then
-      echo "Updating k9s from $K9S_INSTALLED_VERSION to $K9S_LATEST_VERSION"
-      install_latest_k9s
-    else
-      echo "Latest version of k9s already installed"
-    fi
+ensure_latest_node() {
+  if ! [ -x "$(command -v node)" ]; then
+    echo "Installing node"
+    curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
+    sudo apt install -y nodejs
   fi
 }
 
 create_sudoers
 create_update
 
-ensure_latest_node
-ensure_latest_glab
-
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y gh gpg jq unattended-upgrades unzip
+sudo apt-get install -y curl gh gpg jq unattended-upgrades unzip
 sudo dpkg-reconfigure -u unattended-upgrades
 
 ensure_latest_bun
 ensure_latest_deno
 ensure_latest_docker
+ensure_latest_glab
 ensure_latest_helm
+ensure_latest_k9s
 ensure_latest_kind
 ensure_latest_kubectl
-ensure_latest_k9s
+ensure_latest_node
