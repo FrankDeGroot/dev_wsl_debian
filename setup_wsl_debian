@@ -69,6 +69,16 @@ ensure_latest_docker() {
   fi
 }
 
+ensure_latest_dotnet() {
+  if ! [ -x "$(command -v dotnet)" ]; then
+    curl -fsSL https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    rm packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y dotnet-sdk-9.0
+  fi
+}
+
 ensure_latest_glab() {
   if ! [ -x "$(command -v glab)" ]; then
     curl -fsSL https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
@@ -179,6 +189,7 @@ sudo dpkg-reconfigure -u unattended-upgrades
 ensure_latest_bun
 ensure_latest_deno
 ensure_latest_docker
+ensure_latest_dotnet
 ensure_latest_glab
 ensure_latest_helm
 ensure_latest_k9s
