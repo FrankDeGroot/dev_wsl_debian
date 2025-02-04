@@ -59,7 +59,7 @@ ensure_latest_docker() {
     sudo chmod a+r /etc/apt/keyrings/docker.asc
     # Add the repository to apt sources
     echo \
-      "deb [arch=$(dpkg --print-architecture) \
+      "deb [arch=$ARCH \
       signed-by=/etc/apt/keyrings/docker.asc] \
       https://download.docker.com/linux/$ID \
       $VERSION_CODENAME stable" |
@@ -86,7 +86,7 @@ ensure_latest_dotnet() {
 ensure_latest_glab() {
   if ! [ -x "$(command -v glab)" ]; then
     curl -fsSL https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
-    echo "deb [arch=all,$(dpkg --print-architecture) signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
+    echo "deb [arch=all,$ARCH signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
     sudo apt update
     sudo apt install glab
   fi
@@ -94,15 +94,15 @@ ensure_latest_glab() {
 
 ensure_latest_helm() {
   curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+  echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
   sudo apt-get update
   sudo apt-get install helm
 }
 
 install_latest_k9s() {
-  curl -LO https://github.com/derailed/k9s/releases/download/$K9S_LATEST_VERSION/k9s_Linux_amd64.tar.gz
-  tar -xzvf k9s_Linux_amd64.tar.gz --wildcards 'k9s'
-  rm k9s_Linux_amd64.tar.gz
+  curl -LO https://github.com/derailed/k9s/releases/download/$K9S_LATEST_VERSION/k9s_Linux_$ARCH.tar.gz
+  tar -xzvf k9s_Linux_$ARCH.tar.gz --wildcards 'k9s'
+  rm k9s_Linux_$ARCH.tar.gz
   sudo mv ./k9s /usr/local/bin/k9s
   git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
   cd k9s
@@ -131,7 +131,7 @@ ensure_latest_k9s() {
 }
 
 install_latest_kind() {
-  curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v{$KIND_LATEST_VERSION}/kind-linux-amd64
+  curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v{$KIND_LATEST_VERSION}/kind-linux-$ARCH
   chmod +x ./kind
   sudo mv ./kind /usr/local/bin/kind
 }
@@ -153,7 +153,7 @@ ensure_latest_kind() {
 }
 
 install_latest_kubectl() {
-  curl -LO "https://dl.k8s.io/release/$KUBECTL_LATEST_VERSION/bin/linux/amd64/kubectl"
+  curl -LO "https://dl.k8s.io/release/$KUBECTL_LATEST_VERSION/bin/linux/$ARCH/kubectl"
   chmod +x ./kubectl
   sudo mv ./kubectl /usr/local/bin/kubectl
 }
@@ -191,6 +191,8 @@ ensure_latest_powershell() {
     sudo apt-get install -y powershell
   fi
 }
+
+ARCH=$(dpkg --print-architecture)
 
 create_sudoers
 create_update
