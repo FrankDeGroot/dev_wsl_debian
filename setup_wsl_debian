@@ -50,14 +50,10 @@ ensure_latest_deno() {
 ensure_latest_docker() {
   if ! [ -x "$(command -v docker)" ]; then
     echo "Installing Docker"
-    # Get specific apt-based distro
-    . /etc/os-release
-    # Add Docker's official GPG key
     sudo apt-get install -y ca-certificates curl
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/$ID/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
-    # Add the repository to apt sources
     echo \
       "deb [arch=$ARCH \
       signed-by=/etc/apt/keyrings/docker.asc] \
@@ -75,7 +71,7 @@ ensure_latest_docker() {
 
 ensure_latest_dotnet() {
   if ! [ -x "$(command -v dotnet)" ]; then
-    curl -fsSL https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
+    curl -fsSL https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
     rm packages-microsoft-prod.deb
     sudo apt-get update
@@ -184,7 +180,7 @@ ensure_latest_node() {
 
 ensure_latest_powershell() {
   if ! [ -x "$(command -v pwsh)" ]; then
-    curl -fsSL https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
+    curl -fsSL https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
     sudo dpkg -i packages-microsoft-prod.deb
     rm packages-microsoft-prod.deb
     sudo apt-get update
@@ -192,6 +188,7 @@ ensure_latest_powershell() {
   fi
 }
 
+. /etc/os-release
 ARCH=$(dpkg --print-architecture)
 
 create_sudoers
@@ -199,7 +196,7 @@ create_update
 
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y curl gh gpg jq unattended-upgrades unzip
+sudo apt-get install -y curl gh gpg jq unattended-upgrades unzip yq
 sudo dpkg-reconfigure -u unattended-upgrades
 
 ensure_latest_azure_cli
