@@ -104,14 +104,14 @@ install_latest_k9s() {
   tar -xzvf k9s_Linux_amd64.tar.gz --wildcards 'k9s'
   rm k9s_Linux_amd64.tar.gz
   sudo mv ./k9s /usr/local/bin/k9s
-
-  # TODO get skins directory using something like below:
-  # git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
-  # cd k9s
-  # git sparse-checkout set --no-cone /skins
-  # git checkout
-  # mkdir -p ~/.config/k9s
-  # mv skins ~/.config/k9s/skins
+  git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
+  cd k9s
+  git sparse-checkout set --no-cone /skins
+  git checkout
+  mkdir -p ~/.config/k9s
+  mv skins ~/.config/k9s
+  cd ..
+  rm -rf k9s
 }
 
 ensure_latest_k9s() {
