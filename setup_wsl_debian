@@ -196,7 +196,7 @@ create_update
 
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y build-essential curl gh gpg jq python3-pip unattended-upgrades unzip yq
+sudo apt-get install -y build-essential curl gh git gpg jq python3-pip unattended-upgrades unzip yq
 sudo dpkg-reconfigure -u unattended-upgrades
 
 ensure_latest_azure_cli
