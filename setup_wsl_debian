@@ -116,7 +116,7 @@ install_latest_k9s() {
   git sparse-checkout set --no-cone /skins
   git checkout
   mkdir -p ~/.config/k9s
-  mv skins ~/.config/k9s
+  mv -f skins ~/.config/k9s
   cd ..
   rm -rf k9s
 }
