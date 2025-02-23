@@ -111,14 +111,14 @@ install_latest_k9s() {
   tar -xzvf k9s_Linux_$ARCH.tar.gz --wildcards 'k9s'
   rm k9s_Linux_$ARCH.tar.gz
   sudo mv ./k9s /usr/local/bin/k9s
-  git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s
-  cd k9s
+  git clone -n --depth=1 --filter=tree:0 https://github.com/derailed/k9s /tmp/k9s
+  pushd /tmp/k9s
   git sparse-checkout set --no-cone /skins
   git checkout
-  mkdir -p ~/.config/k9s
-  mv -f skins ~/.config/k9s
-  cd ..
-  rm -rf k9s
+  mkdir -p ~/.config/k9s/skins
+  mv -f skins/* ~/.config/k9s/skins
+  rm -rf /tmp/k9s
+  popd
 }
 
 ensure_latest_k9s() {
