@@ -90,12 +90,25 @@ ensure_latest_dotnet() {
   fi
 }
 
+install_latest_glab() {
+  curl -LO https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_LATEST_VERSION}/downloads/glab_${GLAB_LATEST_VERSION}_linux_${ARCH}.deb
+  sudo dpkg -i glab_${GLAB_LATEST_VERSION}_linux_${ARCH}.deb
+  rm glab_${GLAB_LATEST_VERSION}_linux_${ARCH}.deb
+}
+
 ensure_latest_glab() {
+  GLAB_LATEST_VERSION=$(curl -s  https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].name[1:]')
   if ! [ -x "$(command -v glab)" ]; then
-    curl -fsSL https://proget.makedeb.org/debian-feeds/prebuilt-mpr.pub | gpg --dearmor | sudo tee /usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg 1> /dev/null
-    echo "deb [arch=all,$ARCH signed-by=/usr/share/keyrings/prebuilt-mpr-archive-keyring.gpg] https://proget.makedeb.org prebuilt-mpr $(lsb_release -cs)" | sudo tee /etc/apt/sources.list.d/prebuilt-mpr.list
-    sudo apt update
-    sudo apt install glab
+    echo "Downloading glab"
+    install_latest_glab
+  else
+    GLAB_INSTALLED_VERSION=$(glab version | awk 'NR==1 {print $4}')
+    if [ "$GLAB_LATEST_VERSION" != "$GLAB_INSTALLED_VERSION" ]; then
+      echo "Updating glab from $GLAB_INSTALLED_VERSION to $GLAB_LATEST_VERSION"
+      install_latest_glab
+    else
+      echo "Latest version of glab already installed"
+    fi
   fi
 }
 
