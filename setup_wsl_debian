@@ -212,6 +212,15 @@ ensure_latest_powershell() {
   fi
 }
 
+ensure_latest_rust() {
+  if ! [ -x "$(command -v rustup)" ]; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  else
+    rustup self update
+    rustup update
+  fi
+}
+
 . /etc/os-release
 ARCH=$(dpkg --print-architecture)
 
@@ -249,3 +258,4 @@ ensure_latest_kind
 ensure_latest_kubectl
 ensure_latest_node
 ensure_latest_powershell
+ensure_latest_rust
