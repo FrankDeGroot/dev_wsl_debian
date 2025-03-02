@@ -97,7 +97,7 @@ install_latest_glab() {
 }
 
 ensure_latest_glab() {
-  GLAB_LATEST_VERSION=$(curl -s  https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].name[1:]')
+  GLAB_LATEST_VERSION=$(curl -s https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases | jq -r '.[0].name[1:]')
   if ! [ -x "$(command -v glab)" ]; then
     echo "Downloading glab"
     install_latest_glab
