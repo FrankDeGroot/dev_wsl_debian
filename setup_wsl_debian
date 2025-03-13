@@ -123,6 +123,7 @@ ensure_latest_golang() {
   if ! [ -x "$(command -v go)" ]; then
     echo "Downloading golang"
     install_latest_golang
+    grep -qxF 'export PATH=$PATH:/usr/local/go/bin' ~/.bashrc || echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
   else
     GOLANG_INSTALLED_VERSION=$(go version | awk 'NR==1 {print $3}')
     if [ "$GOLANG_LATEST_VERSION" != "$GOLANG_INSTALLED_VERSION" ]; then
