@@ -112,6 +112,28 @@ ensure_latest_glab() {
   fi
 }
 
+install_latest_golang() {
+  curl -LO https://dl.google.com/go/$GOLANG_LATEST_VERSION.linux-${ARCH}.tar.gz
+  sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf $GOLANG_LATEST_VERSION.linux-${ARCH}.tar.gz
+  rm $GOLANG_LATEST_VERSION.linux-${ARCH}.tar.gz
+}
+
+ensure_latest_golang() {
+  GOLANG_LATEST_VERSION=$(curl -s https://go.dev/VERSION?m=text | awk 'NR==1 {print $1}')
+  if ! [ -x "$(command -v go)" ]; then
+    echo "Downloading golang"
+    install_latest_golang
+  else
+    GOLANG_INSTALLED_VERSION=$(go version | awk 'NR==1 {print $3}')
+    if [ "$GOLANG_LATEST_VERSION" != "$GOLANG_INSTALLED_VERSION" ]; then
+      echo "Updating golang from $GOLANG_INSTALLED_VERSION to $GOLANG_LATEST_VERSION"
+      install_latest_golang
+    else
+      echo "Latest version of golang already installed"
+    fi
+  fi
+}
+
 ensure_latest_helm() {
   curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
   echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
@@ -252,6 +274,7 @@ ensure_latest_deno
 ensure_latest_docker
 ensure_latest_dotnet
 ensure_latest_glab
+ensure_latest_golang
 ensure_latest_helm
 ensure_latest_k9s
 ensure_latest_kind
