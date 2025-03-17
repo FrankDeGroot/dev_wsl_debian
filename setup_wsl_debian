@@ -253,6 +253,7 @@ create_sudoers
 create_update
 
 sudo apt-get update
+sudo apt-get remove -y nano
 sudo apt-get upgrade -y
 sudo apt-get install -y \
 augeas-tools \
