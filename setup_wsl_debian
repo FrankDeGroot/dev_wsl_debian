@@ -104,7 +104,7 @@ ensure_latest_glab() {
     echo "Downloading glab"
     install_latest_glab
   else
-    GLAB_INSTALLED_VERSION=$(glab version | awk 'NR==1 {print $4}')
+    GLAB_INSTALLED_VERSION=$(glab version | awk '{print $2}')
     if [ "$GLAB_LATEST_VERSION" != "$GLAB_INSTALLED_VERSION" ]; then
       echo "Updating glab from $GLAB_INSTALLED_VERSION to $GLAB_LATEST_VERSION"
       install_latest_glab
