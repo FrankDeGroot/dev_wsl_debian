@@ -268,11 +268,16 @@ jq \
 python3-pip \
 unattended-upgrades \
 unzip \
-vim \
+neovim \
 xmlstarlet \
 yq \
 
+sudo apt-get autoremove -y
 sudo dpkg-reconfigure -u unattended-upgrades
+
+sudo update-alternatives --force \
+  --install /usr/bin/vim vim /usr/bin/nvim 50 \
+  --slave /usr/bin/vim.1.gz vim.1.gz /usr/share/man/man1/nvim.1.gz
 
 ensure_wsl_systemd
 
