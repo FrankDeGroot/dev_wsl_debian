@@ -92,6 +92,17 @@ ensure_latest_dotnet() {
   fi
 }
 
+ensure_latest_func() {
+  if ! [ -x "$(command -v func)" ]; then
+    curl -fsSL https://packages.microsoft.com/config/debian/$VERSION_ID/packages-microsoft-prod.deb -o packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    rm packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y \
+      azure-functions-core-tools-4
+  fi
+}
+
 install_latest_glab() {
   curl -LO https://gitlab.com/gitlab-org/cli/-/releases/v${GLAB_LATEST_VERSION}/downloads/glab_${GLAB_LATEST_VERSION}_linux_${ARCH}.deb
   sudo dpkg -i glab_${GLAB_LATEST_VERSION}_linux_${ARCH}.deb
@@ -286,6 +297,7 @@ ensure_latest_bun
 ensure_latest_deno
 ensure_latest_docker
 ensure_latest_dotnet
+ensure_latest_func
 ensure_latest_glab
 ensure_latest_golang
 ensure_latest_helm
