@@ -282,6 +282,7 @@ unzip \
 neovim \
 xmlstarlet \
 yq \
+zip \
 
 sudo apt-get autoremove -y
 sudo dpkg-reconfigure -u unattended-upgrades
